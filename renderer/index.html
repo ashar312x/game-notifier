@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline';" />
+  <title>Game Notifier — Settings</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <span class="logo">🎮</span>
+    <h1>Game Notifier</h1>
+    <label class="toggle-wrap" title="Enable / disable all notifications">
+      <input type="checkbox" id="enabledToggle" />
+      <span class="toggle-track"><span class="toggle-knob"></span></span>
+    </label>
+  </header>
+
+  <main>
+    <!-- WhatsApp Settings -->
+    <section>
+      <h2>WhatsApp</h2>
+      <div class="field">
+        <label for="groupName">Group / Contact name</label>
+        <input type="text" id="groupName" placeholder="e.g. Game on" />
+        <span class="hint">Exactly as it appears in WhatsApp</span>
+      </div>
+      <div class="field">
+        <label for="messageTemplate">Message template</label>
+        <textarea id="messageTemplate" rows="3" placeholder="Hey I am playing {game}, do you guys wanna hop in? 🎮"></textarea>
+        <span class="hint">Use <code>{game}</code> as a placeholder for the game name</span>
+      </div>
+    </section>
+
+    <!-- Behaviour -->
+    <section>
+      <h2>Behaviour</h2>
+      <div class="row">
+        <div class="field">
+          <label for="cooldownMinutes">Cooldown (minutes)</label>
+          <input type="number" id="cooldownMinutes" min="0" max="1440" />
+          <span class="hint">Min time between notifications for the same game</span>
+        </div>
+        <div class="field">
+          <label for="notificationDelaySecs">Detection delay (seconds)</label>
+          <input type="number" id="notificationDelaySecs" min="0" max="120" />
+          <span class="hint">Wait before sending — avoids false positives</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Games List -->
+    <section>
+      <h2>Monitored Games</h2>
+      <div class="games-toolbar">
+        <input type="text" id="newGameName" placeholder="Game name (e.g. Valorant)" />
+        <input type="text" id="newGameExe" placeholder="Executable (e.g. VALORANT-Win64-Shipping.exe)" />
+        <button id="addGameBtn" class="btn-accent">Add</button>
+      </div>
+      <div id="gamesList" class="games-list"></div>
+    </section>
+  </main>
+
+  <footer>
+    <button id="saveBtn" class="btn-primary">Save Settings</button>
+    <button id="testBtn" class="btn-secondary">Send Test Message</button>
+    <span id="statusMsg" class="status-msg"></span>
+  </footer>
+
+  <script src="renderer.js"></script>
+</body>
+</html>
