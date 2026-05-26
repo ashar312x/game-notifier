@@ -1,6 +1,8 @@
 const { exec } = require('child_process');
+const path = require('path');
 const EventEmitter = require('events');
 const config = require('./configManager');
+const { log } = require('./logger');
 
 const POLL_INTERVAL_MS = 5000;
 
@@ -25,17 +27,21 @@ class GameMonitor extends EventEmitter {
   }
 
   _poll(isInit) {
+    log(`[GameMonitor] poll tick (isInit=${isInit})`);
     exec('tasklist /FO CSV /NH', (err, stdout) => {
-      if (err) return;
+      if (err) { log('[GameMonitor] tasklist error: ' + err); return; }
 
       const running = this._parseTasklist(stdout);
       const games = config.get('games') || [];
 
-      // Detect games that just started
       for (const game of games) {
-        const exe = game.executable.toLowerCase();
+        const exe = path.basename(game.executable).toLowerCase();
         const isRunning = running.has(exe);
         const wasActive = this.activeGames.has(exe);
+
+        if (isRunning) {
+          log(`[GameMonitor] DETECTED running: ${exe} (wasActive=${wasActive}, isInit=${isInit})`);
+        }
 
         if (isRunning && !wasActive) {
           const entry = { name: game.name, detectedAt: Date.now(), notified: false };
@@ -43,11 +49,14 @@ class GameMonitor extends EventEmitter {
 
           if (!isInit) {
             const delaySecs = config.get('notificationDelaySecs') || 10;
+            log(`[GameMonitor] Scheduling notification for "${game.name}" in ${delaySecs}s`);
             setTimeout(() => {
-              // Re-check the game is still running before notifying
               if (this.activeGames.has(exe) && !this.activeGames.get(exe).notified) {
                 this.activeGames.get(exe).notified = true;
+                log(`[GameMonitor] Emitting gameStarted for "${game.name}"`);
                 this.emit('gameStarted', { executable: exe, name: game.name });
+              } else {
+                log(`[GameMonitor] Notification suppressed for "${game.name}" (no longer active or already notified)`);
               }
             }, delaySecs * 1000);
           }

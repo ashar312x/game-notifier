@@ -1,5 +1,6 @@
 const { app, BrowserWindow, Tray, Menu, nativeImage, ipcMain, Notification } = require('electron');
 const path = require('path');
+let log = (...a) => console.log(...a); // overwritten after app ready
 
 // Keep single instance
 if (!app.requestSingleInstanceLock()) {
@@ -37,6 +38,11 @@ function createSettingsWindow() {
   settingsWin.setMenuBarVisibility(false);
   settingsWin.loadFile(path.join(__dirname, 'renderer', 'index.html'));
 
+  settingsWin.webContents.once('did-finish-load', () => {
+    const { recentLines } = require('./src/logger');
+    settingsWin.webContents.send('logs:init', recentLines.slice());
+  });
+
   settingsWin.on('closed', () => { settingsWin = null; });
 }
 
@@ -59,11 +65,12 @@ function buildTrayMenu() {
 }
 
 async function handleGameStarted(game) {
-  if (!config.get('enabled')) return;
+  console.log(`[Main] handleGameStarted: ${game.name}`);
+  if (!config.get('enabled')) { log('[Main] Blocked: notifications disabled'); return; }
 
   const cooldownMs = (config.get('cooldownMinutes') || 30) * 60 * 1000;
   const lastNotified = cooldowns.get(game.name) || 0;
-  if (Date.now() - lastNotified < cooldownMs) return;
+  if (Date.now() - lastNotified < cooldownMs) { console.log(`[Main] Blocked: cooldown (${Math.round((cooldownMs - (Date.now() - lastNotified)) / 60000)}m remaining)`); return; }
 
   cooldowns.set(game.name, Date.now());
 
@@ -121,6 +128,15 @@ app.whenReady().then(() => {
   config = require('./src/configManager');
   gameMonitor = require('./src/gameMonitor');
   automator = require('./src/whatsappAutomator');
+  const logger = require('./src/logger');
+  log = logger.log;
+  log('[Main] App ready, modules loaded');
+
+  logger.emitter.on('line', (line) => {
+    if (settingsWin && !settingsWin.isDestroyed()) {
+      settingsWin.webContents.send('logs:line', line);
+    }
+  });
 
   config.load();
 
@@ -139,7 +155,9 @@ app.whenReady().then(() => {
 
   // Start monitoring
   gameMonitor.on('gameStarted', handleGameStarted);
+  log('[Main] Starting game monitor...');
   gameMonitor.start();
+  log('[Main] Game monitor started');
 
   // Open settings on first launch if group is still default
   if (config.get('groupName') === 'Game on') {

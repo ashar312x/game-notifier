@@ -132,5 +132,47 @@ function showStatus(msg, isError = false) {
   statusTimer = setTimeout(() => { statusMsg.textContent = ''; }, 5000);
 }
 
+// ── Logs ──────────────────────────────────────────────────────────────────
+const logOutput        = document.getElementById('logOutput');
+const clearLogsBtn     = document.getElementById('clearLogsBtn');
+const autoScrollToggle = document.getElementById('autoScrollToggle');
+const MAX_LOG_ENTRIES  = 200;
+
+function classifyLine(line) {
+  const lower = line.toLowerCase();
+  if (lower.includes('error') || lower.includes('fail')) return 'log-error';
+  if (lower.includes('warn'))                             return 'log-warn';
+  if (lower.includes('gamestarted') || lower.includes('game started') || lower.includes('emitting')) return 'log-success';
+  return '';
+}
+
+function appendLogLine(line) {
+  const el = document.createElement('div');
+  el.className = 'log-line ' + classifyLine(line);
+  el.textContent = line;
+  logOutput.appendChild(el);
+
+  // Trim old entries to avoid DOM bloat
+  while (logOutput.children.length > MAX_LOG_ENTRIES) {
+    logOutput.removeChild(logOutput.firstChild);
+  }
+
+  if (autoScrollToggle.checked) {
+    logOutput.scrollTop = logOutput.scrollHeight;
+  }
+}
+
+function initLogs() {
+  api.onLogsInit((lines) => {
+    for (const line of lines) appendLogLine(line);
+  });
+  api.onLog(appendLogLine);
+}
+
+clearLogsBtn.addEventListener('click', () => {
+  logOutput.innerHTML = '';
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────
 loadConfig();
+initLogs();
