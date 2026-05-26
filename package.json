@@ -5,9 +5,34 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "setup": "node scripts/create-icon.js"
+    "predev": "taskkill /f /im electron.exe 2>nul || exit 0",
+    "dev": "electron .",
+    "setup": "node scripts/create-icon.js",
+    "build": "electron-builder"
   },
-  "dependencies": {
-    "electron": "^28.0.0"
+  "author": "Ashar",
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.ashar.game-notifier",
+    "productName": "Game Notifier",
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "files": [
+      "**/*",
+      "!node_modules/.cache",
+      "!dist"
+    ]
   }
 }
